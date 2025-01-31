@@ -161,10 +161,12 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
+        const CSV_URL = 'https://github.com/hzhangic/regional-similarity/raw/main/docs/jensen_shannon_distance_matrix.csv'
+
         // Load GeoJSON data
         d3.json("county_updated.geojson").then(function(geojson) {
             // Load the JSD Matrix
-            d3.csv("https://github.com/hzhangic/regional-similarity/raw/main/docs/jensen_shannon_distance_matrix.csv").then(function(jsdData) {
+            d3.csv(CSV_URL).then(function(jsdData) {
                 const jsdMatrix = {};
                 jsdData.forEach(row => {
                     const county = row['place']; // Get the county ID (e.g., "geoId/01001")
