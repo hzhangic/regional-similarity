@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regional Similarity</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css">
+    <style>
+        /* Remove default margin and padding, and hide overflow */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scroll bars */
+            font-family: Arial, sans-serif; /* Sans-serif font for the entire page */
+        }
+
+        /* Style for the title banner */
+        .title-banner {
+            background-color: #005477; /* Blue background */
+            color: white; /* White text */
+            padding: 20px; /* Padding around the text */
+            text-align: left; /* Left align the text */
+            font-size: 24px; /* Font size */
+            font-weight: bold; /* Bold text */
+            width: 100%; /* Full width */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a shadow */
+            box-sizing: border-box; /* Include padding in height calculation */
+            position: relative; /* Required for positioning the info icon */;
+        }
+
+        /* Style for the info icon */
+        .info-icon {
+            position: absolute; /* Position the icon absolutely within the banner */
+            right: 20px; /* Distance from the right */
+            top: 50%; /* Center vertically */
+            transform: translateY(-50%); /* Adjust for exact centering */
+            cursor: pointer; /* Change cursor to pointer on hover */
+            font-size: 20px; /* Icon size */
+            color: white; /* Icon color */
+        }
+
+        /* Style for the dialogue box */
+        .dialog-box {
+            display: none; /* Hidden by default */
+            position: fixed; /* Fixed position to stay on top */
+            top: 50%; /* Center vertically */
+            left: 50%; /* Center horizontally */
+            transform: translate(-50%, -50%); /* Adjust for exact centering */
+            background: white; /* White background */
+            padding: 20px; /* Padding inside the box */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Add a shadow */
+            border-radius: 5px; /* Rounded corners */
+            z-index: 1000; /* Ensure it stays on top of other elements */
+            max-width: 400px; /* Maximum width of the box */
+            width: 90%; /* Responsive width */
+        }
+
+        /* Style for the close button */
+        .close-button {
+            position: absolute; /* Position the close button absolutely */
+            top: 10px; /* Distance from the top */
+            right: 10px; /* Distance from the right */
+            cursor: pointer; /* Change cursor to pointer on hover */
+            font-size: 18px; /* Button size */
+            color: #333; /* Button color */
+        }
+
+        /* Adjust the map height to account for the banner */
+        #map {
+            height: calc(100vh - 68px); /* Full viewport height minus banner height (20px padding * 2 + 24px font size) */
+            width: 100%; /* Full width */
+        }
+
+
+        /* Style for the legend */
+        .legend {
+            position: fixed; /* Fix the legend relative to the viewport */
+            top: 88px; /* Distance from the top (banner height + margin) */
+            right: 10px; /* Distance from the right */
+            background: white; /* White background */
+            padding: 10px; /* Padding around the legend */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Add a shadow */
+            border-radius: 5px; /* Rounded corners */
+            font-size: 12px; /* Font size */
+            line-height: 18px; /* Line height */
+            z-index: 1000; /* Ensure the legend stays on top of other elements */
+        }
+
+        .legend h4 {
+            margin: 0 0 5px; /* Margin for the legend title */
+            font-size: 14px; /* Font size for the title */
+        }
+
+        .legend div {
+            display: flex; /* Align color boxes and labels */
+            align-items: center; /* Center items vertically */
+            margin-bottom: 2px; /* Space between legend items */
+        }
+
+        .legend span {
+            display: inline-block; /* Make color boxes inline */
+            width: 18px; /* Width of the color box */
+            height: 18px; /* Height of the color box */
+            margin-right: 5px; /* Space between color box and label */
+            border: 1px solid #999; /* Border for the color box */
+        }
+    </style>
+</head>
+<body>
+    <div class="title-banner">
+        Regional Similarity
+        <span class="info-icon" onclick="openDialog()">&#9432;</span> <!-- Info icon -->
+    </div>
+
+    <!-- Dialogue Box -->
+    <div class="dialog-box" id="dialogBox">
+        <span class="close-button" onclick="closeDialog()">&times;</span> <!-- Close button -->
+        <h3>Help Information</h3>
+        <p>
+            This tool helps you explore the similarities between different counties in the United States. The color scheme in the legend represents the <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jensenshannon.html">Jensen-Shannon Distance (JSD)</a> between counties based on the <a href="https://github.com/google-research/population-dynamics">Population Dynamics Foundation Model (PDFM)</a>:
+            <ul>
+                <li><strong>Darker colors</strong> indicate smaller JSDs, meaning the counties are more similar.</li>
+                <li><strong>Lighter colors</strong> indicate larger JSDs, meaning the counties are less similar.</li>
+            </ul>
+            Use the map to navigate and compare regions. Click on a county to view its comparative similarities with other counties. Hover over each county to see the associated data.
+        </p>
+        <p>Author: Hongyu Zhang</p>
+    </div>
+
+    <div id="map">
+
+        <!-- Legend -->
+        <div class="legend">
+            <h4>Legend</h4>
+            <p><em>JSD</em></p>
+            <div><span style="background: #040273;"></span>Most Similar</div>            
+            <div><span style="background: #084081;"></span>0.1 - 0.2</div>
+            <div><span style="background: #0868ac;"></span>0.2 - 0.3</div>
+            <div><span style="background: #2b8cbe;"></span>0.3 - 0.4</div>
+            <div><span style="background: #4eb3d3;"></span>0.4 - 0.5</div>
+            <div><span style="background: #7bccc4;"></span>0.5 - 0.6</div>
+            <div><span style="background: #a8ddb5;"></span>0.6 - 0.7</div>
+            <div><span style="background: #ccebc5;"></span>0.7 - 0.8</div>
+            <div><span style="background: #e0f3db;"></span>0.8 - 0.9</div>
+            <div><span style="background: #f7fcf0;"></span>Least Similar</div>
+
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([37.8, -96], 4); // Centered on the USA
+
+        // Add a tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Load GeoJSON data
+        d3.json("county_updated.geojson").then(function(geojson) {
+            // Load the JSD Matrix
+            d3.csv("jensen_shannon_distance_matrix.csv").then(function(jsdData) {
+                const jsdMatrix = {};
+                jsdData.forEach(row => {
+                    const county = row['place']; // Get the county ID (e.g., "geoId/01001")
+                    delete row['place']; // Remove the 'place' column to leave only distances
+                    jsdMatrix[county] = row; // Store the distances for this county
+                });
+
+                // Add GeoJSON layer
+                const geoLayer = L.geoJson(geojson, {
+                    style: defaultStyle,
+                    onEachFeature: function(feature, layer) {
+                        // Click event to highlight distances
+                        layer.on('click', function() {
+                            clickedCounty = feature.properties.place; // Use 'place' as the identifier
+                            console.log("Clicked County:", clickedCounty);
+                            highlightDistances(clickedCounty);
+                        });
+
+                        // Mouseover event to show tooltip
+                        layer.on('mouseover', function() {
+                            const targetCounty = feature.properties.place;
+                            const countyName = feature.properties.county;
+                            const stateName = feature.properties.state;
+                            const population = feature.properties.population;
+                            const jsd = clickedCounty ? parseFloat(jsdMatrix[clickedCounty][targetCounty]) : null;
+
+                            // Tooltip content
+                            let tooltipContent = `
+                                <strong>County:</strong> ${countyName}<br>
+                                <strong>State:</strong> ${stateName}<br>
+                                <strong>Population:</strong> ${population}
+                            `;
+
+                            if (!isNaN(jsd)) {
+                                tooltipContent += `<br><strong>JSD:</strong> ${jsd.toFixed(4)}`;
+                            }
+
+                            // Bind tooltip to the layer
+                            layer.bindTooltip(tooltipContent, {
+                                direction: 'top',
+                                permanent: false, // Tooltip disappears when mouse leaves
+                                opacity: 0.9
+                            }).openTooltip();
+                        });
+
+                        // Mouseout event to hide tooltip
+                        layer.on('mouseout', function() {
+                            layer.closeTooltip();
+                        });
+                    }
+                }).addTo(map);
+
+                // Default style
+                function defaultStyle() {
+                    return {
+                        fillColor: '#CCCCCC',
+                        weight: 1,
+                        opacity: 1,
+                        color: 'white',
+                        fillOpacity: 0.7
+                    };
+                }
+
+                // Function to highlight counties based on distance
+                function highlightDistances(clickedCounty) {
+                    geoLayer.eachLayer(function(layer) {
+                        const targetCounty = layer.feature.properties.place; // Use 'place' as the identifier
+                        console.log("Target County:", targetCounty);
+                        const distance = parseFloat(jsdMatrix[clickedCounty][targetCounty]);
+
+                        if (!isNaN(distance)) {
+                            layer.setStyle({
+                                fillColor: getColor(distance),
+                                fillOpacity: 0.8
+                            });
+                        } else {
+                            layer.setStyle(defaultStyle()); // Reset style for counties with no data
+                        }
+                    });
+                }
+
+                // Function to assign colors based on distance
+                function getColor(distance) {
+                    return distance > 0.9 ? '#f7fcf0' :
+                           distance > 0.8 ? '#e0f3db' :
+                           distance > 0.7 ? '#ccebc5' :
+                           distance > 0.6 ? '#a8ddb5' :
+                           distance > 0.5 ? '#7bccc4' :
+                           distance > 0.4 ? '#4eb3d3' :
+                           distance > 0.3 ? '#2b8cbe' :
+                           distance > 0.2 ? '#0868ac' :
+                           distance > 0.1 ? '#084081' :
+                                            '#040273';
+                }
+            });
+        });
+
+        // Function to open the dialogue box
+        function openDialog() {
+            document.getElementById("dialogBox").style.display = "block";
+        }
+
+        // Function to close the dialogue box
+        function closeDialog() {
+            document.getElementById("dialogBox").style.display = "none";
+        }
+    </script>
+</body>
+</html>
