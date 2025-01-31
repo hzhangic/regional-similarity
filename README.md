@@ -11,4 +11,4 @@ Use the map to navigate and compare regions. Click on a county to view its compa
 
 **Author:** Hongyu Zhang
 
-**Website:** http://hzhangic.github.io/regional-similarity
+**Website:** http://hzhangic.github.io/regional-similarity/
