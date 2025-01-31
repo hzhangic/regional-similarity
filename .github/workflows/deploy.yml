@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository with LFS support
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: true  # Enables Git LFS support
 
@@ -26,9 +26,9 @@ jobs:
         run: git lfs pull
 
       - name: Upload site files
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v4
         with:
           path: .  # Upload everything (including index.html)
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
