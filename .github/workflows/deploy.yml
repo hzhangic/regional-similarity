@@ -1,0 +1,34 @@
+name: Deploy Static Site with LFS
+
+on:
+  push:
+    branches:
+      - main  # Change if your default branch is different
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository with LFS support
+        uses: actions/checkout@v3
+        with:
+          lfs: true  # Enables Git LFS support
+
+      - name: Install Git LFS
+        run: git lfs install
+
+      - name: Fetch LFS files
+        run: git lfs pull
+
+      - name: Upload site files
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: .  # Upload everything (including index.html)
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
